@@ -1,0 +1,6 @@
+certs/
+data/
+dist/
+node_modules/
+.env
+.env.*
