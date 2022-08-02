@@ -8,7 +8,7 @@ export interface LoanQueryOutput {
 export function makeLoanQuery(selectionSet: string): string {
   return gql`
   query Loan(
-    $loanId: ID
+    $loanId: ID!
   ) {
     Loan(
       loanId: $loanId
