@@ -3,6 +3,7 @@ import { gql, GraphQLClient } from "graphql-request";
 export interface UpdateWebhookInput {
   id: string;
   url?: string;
+  errorCount?: number;
 }
 
 export interface UpdateWebhookOutput {

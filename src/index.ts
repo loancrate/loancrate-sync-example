@@ -211,7 +211,10 @@ try {
     const loanCount = await loanDatabase.size;
     logger.info(`Already synced ${loanCount} loans`);
   }
+
   acceptEvents = true;
+  logger.info(`Resetting webhook error count`);
+  await updateWebhook(apiClient, { id: webhookId, errorCount: 0 });
 } catch (err) {
   logger.error(err);
 }

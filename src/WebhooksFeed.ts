@@ -28,6 +28,7 @@ export interface WebhooksFeedWebhook {
   status: string;
   certificates: WebhooksFeedWebhookCertificate[];
   subscriptions: WebhooksFeedWebhookSubscription[];
+  errorCount: number | null;
 }
 
 export interface WebhooksFeedOutput {
@@ -66,6 +67,7 @@ const WebhooksFeedQuery = gql`
           scopeId
           eventTypes
         }
+        errorCount
       }
     }
   }
