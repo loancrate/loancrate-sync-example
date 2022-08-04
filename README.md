@@ -11,9 +11,16 @@ Subsequent loan creations, deletions, and updates occur based on received webhoo
 
 ### Configuration
 
-Copy `.env-sample` to `.env` and set `LOANCRATE_API_ACCESS_TOKEN` to your LoanCrate Bearer token.
-You can obtain a bearer token from the web client using a tool like the Chrome Inspector.
-On the Network tab, find a `graphql` POST request and copy the token from the `authorization` header.
+Copy `.env-sample` to `.env` and set one of the following:
+
+- `LOANCRATE_API_USER_EMAIL` to your LoanCrate account email address.
+  This will open a browser to obtain an access token and refresh token via OAuth.
+  You can close the browser window once the tokens have been obtained.
+- `LOANCRATE_API_ACCESS_TOKEN` to a valid LoanCrate authorization token.
+  You can obtain an authorization token from the web client using a tool like the Chrome Inspector.
+  On the Application tab, copy the value of `AuthToken` from Local Storage.
+  Note that unless you also set `LOANCRATE_API_REFRESH_TOKEN`, the client will no longer
+  be able to fetch from the API after the access token expires (within 12 hours).
 
 ### Install Dependencies
 

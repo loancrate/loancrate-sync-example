@@ -2,7 +2,9 @@ const {
   ALLOW_UNAUTHENTICATED_CLIENT = "true",
   CLIENT_ALLOWED_ALT_NAMES = "DNS:loancrate.dev",
   DATA_DIRECTORY = "data",
+  LOANCRATE_API_ACCESS_TOKEN,
   LOANCRATE_API_REFRESH_TOKEN,
+  LOANCRATE_API_USER_EMAIL,
   LOAN_IMPORT_LIMIT,
   LOG_LEVEL = "info",
   NGROK_AUTH_TOKEN,
@@ -19,8 +21,9 @@ export class Configuration {
   clientAllowedAltNames: Set<string>;
   dataDirectory: string;
   loancrateApiUrl: string;
-  loancrateApiAccessToken: string;
+  loancrateApiAccessToken: string | undefined;
   loancrateApiRefreshToken: string | undefined;
+  loancrateApiUserEmail: string | undefined;
   loanImportLimit: number | undefined;
   logLevel: string;
   ngrokAuthToken: string | undefined;
@@ -40,8 +43,9 @@ export class Configuration {
     );
     this.dataDirectory = DATA_DIRECTORY;
     this.loancrateApiUrl = required("LOANCRATE_API_URL");
-    this.loancrateApiAccessToken = required("LOANCRATE_API_ACCESS_TOKEN");
+    this.loancrateApiAccessToken = LOANCRATE_API_ACCESS_TOKEN;
     this.loancrateApiRefreshToken = LOANCRATE_API_REFRESH_TOKEN;
+    this.loancrateApiUserEmail = LOANCRATE_API_USER_EMAIL;
     this.loanImportLimit = LOAN_IMPORT_LIMIT
       ? parseInt(LOAN_IMPORT_LIMIT)
       : undefined;
