@@ -33,9 +33,8 @@ import { makeLoanQuery } from "./LoanQuery.js";
 import { logger } from "./logger.js";
 import { selectAllFields, selectSubfields } from "./selectField.js";
 import { startServer } from "./server.js";
-import { SubscriptionEventsBatch } from "./SubscriptionEventsBatch.js";
 import { updateWebhook } from "./UpdateWebhook.js";
-import { isObject } from "./util.js";
+import { isSubscriptionEventsBatch } from "./util.js";
 import {
   getWebhookIdFromUrl,
   WebhooksFeedWebhookCertificate,
@@ -48,24 +47,24 @@ interface SyncStatus {
   refreshToken?: string;
 }
 
-function isSubscriptionEventsBatch(v: unknown): v is SubscriptionEventsBatch {
-  return isObject(v) && v.__typename === "SubscriptionEventsBatch";
-}
-
 try {
+  // Load the status from prior runs, if any
   const statusDatabase = getJsonFileSingletonDatabase<SyncStatus>({
     dataPath: configuration.dataDirectory,
     id: "status",
   });
   const status = (await statusDatabase.read()) || { synced: false };
 
+  // Initialize the loan "database", which is a directory of JSON files and an LRU cache
   const loanDatabase = new JsonFileDatabase<Loan>({
     dataPath: path.join(configuration.dataDirectory, "loans"),
     cacheOptions: { max: 1000 },
   });
 
+  // Start the HTTP(S) server with no endpoints configured yet
   const { app, protocol, host, port } = await startServer();
 
+  // Get LoanCrate API access and refresh tokens from prior run, configuration, or browser
   let accessToken: string;
   let refreshToken: string | undefined;
   if (status.accessToken) {
@@ -77,6 +76,7 @@ try {
     accessToken = configuration.loancrateApiAccessToken;
     refreshToken = configuration.loancrateApiRefreshToken;
   } else if (configuration.loancrateApiUserEmail) {
+    // Add an endpoint to the HTTP(S) server to use as the OAuth redirect URI
     const authorizationPromise = new Promise<OAuthTokens>((resolve, reject) => {
       app.get(
         "/oauth",
@@ -90,14 +90,18 @@ try {
         })
       );
     });
+
+    // Get the SSO authorization URL from the LoanCrate API
     const redirectUrl = `${protocol}://${host}:${port}/oauth`;
     const authorizationUrl = await getAuthorizationUrl(
       configuration.loancrateApiUrl,
       configuration.loancrateApiUserEmail,
       redirectUrl
     );
+
     logger.info(`Authenticating via browser at ${authorizationUrl}`);
     await open(authorizationUrl);
+
     ({ accessToken, refreshToken } = await authorizationPromise);
     logger.info("Received OAuth access and refresh tokens");
     status.accessToken = accessToken;
@@ -109,6 +113,7 @@ try {
     );
   }
 
+  // Create the LoanCrate API client, introspect the schema, and build the loan query
   const apiClient = new ApiClient({
     baseUrl: configuration.loancrateApiUrl,
     accessToken,
@@ -128,6 +133,8 @@ try {
   const loanSelectionSet = selectAllFields(loanType);
   const loanQuery = makeLoanQuery(loanSelectionSet.join(" "));
 
+  // Add the webhook endpoint to the HTTP(S) server
+  // (but don't accept events until the initial fetch is complete)
   let acceptEvents = false;
   app.post(
     "/webhook",
@@ -197,6 +204,8 @@ try {
     })
   );
 
+  // Determine the webhook URL to provide to the LoanCrate API
+  // based on the configured public host name or a dynamic ngrok tunnel
   let webhookUrl: string;
   let searchUrl: string;
   let searchOperator: FilterOperator;
@@ -216,6 +225,7 @@ try {
   }
   logger.info(`Using webhook URL: ${webhookUrl}`);
 
+  // Create/update the webhook in the LoanCrate API
   const webhook = await getWebhookIdFromUrl(
     apiClient,
     searchUrl,
@@ -242,6 +252,7 @@ try {
     }
   }
 
+  // Add the CA certificate to the webhook if using HTTPS with a self-signed certificate
   const { serverCaCertificatePath } = configuration;
   if (serverCaCertificatePath) {
     if (!certificates.length) {
@@ -259,6 +270,7 @@ try {
     }
   }
 
+  // Create a subscription to all object changes in the organization
   let subscriptionId;
   let existingSubscription;
   if (!subscriptions.length) {
@@ -275,11 +287,15 @@ try {
     logger.info(`Found existing webhook subscription ${subscriptionId}`);
   }
 
+  // If we created a new subscription or haven't synced before,
+  // fetch all existing loans (or up to the configured limit)
   if (!existingSubscription || !status.synced) {
+    // The API can provide the total loan count, but is currently capped at 1000
     const loanCount = await getFeedTotalCount(apiClient, "LoansFeed");
     const maxLoanCount = 1000;
     const loanCountDisplay =
-      loanCount > maxLoanCount ? ">1000" : String(loanCount);
+      loanCount > maxLoanCount ? `>${maxLoanCount}` : String(loanCount);
+
     const loansFeedQuery = makeFeedQuery(
       "LoansFeed",
       selectSubfields("loans", loanSelectionSet)
@@ -327,9 +343,11 @@ try {
     logger.info(`Already synced ${loanCount} loans`);
   }
 
+  // Start accepting incremental changes via the webhook, and reset its error
+  // count to that it will retry immediately if there were errors previously
   acceptEvents = true;
   logger.info(`Resetting webhook error count`);
   await updateWebhook(apiClient, { id: webhookId, errorCount: 0 });
 } catch (err) {
-  logger.error(err);
+  logger.error(err, "Unhandled exception");
 }
