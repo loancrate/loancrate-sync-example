@@ -1,5 +1,6 @@
 import { TypeKind } from "graphql";
-import { gql, GraphQLClient } from "graphql-request";
+import { gql } from "graphql-request";
+import { ApiClient } from "./ApiClient";
 
 export interface IntrospectionQueryOutput {
   __schema: {
@@ -95,7 +96,7 @@ const IntrospectionQuery = gql`
 `;
 
 export async function getIntrospection(
-  client: GraphQLClient
+  client: ApiClient
 ): Promise<IntrospectionQueryOutput> {
   return await client.request<IntrospectionQueryOutput>(IntrospectionQuery);
 }

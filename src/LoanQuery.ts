@@ -1,4 +1,5 @@
-import { gql, GraphQLClient } from "graphql-request";
+import { gql } from "graphql-request";
+import { ApiClient } from "./ApiClient";
 import { Loan } from "./Loan";
 
 export interface LoanQueryOutput {
@@ -20,7 +21,7 @@ export function makeLoanQuery(selectionSet: string): string {
 }
 
 export async function getLoan(
-  client: GraphQLClient,
+  client: ApiClient,
   loanQuery: string,
   loanId: string
 ): Promise<LoanQueryOutput> {

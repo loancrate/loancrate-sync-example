@@ -1,4 +1,5 @@
-import { gql, GraphQLClient } from "graphql-request";
+import { gql } from "graphql-request";
+import { ApiClient } from "./ApiClient.js";
 import { isObject } from "./util.js";
 
 export type FilterOperator = "equals" | "contains";
@@ -28,15 +29,15 @@ export function makeFeedQuery(
 }
 
 export async function getFeed<T>(
-  client: GraphQLClient,
+  client: ApiClient,
   feedQuery: string,
   input?: FeedInput
 ): Promise<T> {
-  return await client.request<T>(feedQuery, input);
+  return await client.request<T, FeedInput>(feedQuery, input);
 }
 
 export async function getFeedTotalCount(
-  client: GraphQLClient,
+  client: ApiClient,
   feedName: string
 ): Promise<number> {
   const result: unknown = await client.request(

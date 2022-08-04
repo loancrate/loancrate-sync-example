@@ -1,4 +1,4 @@
-import { GraphQLClient } from "graphql-request";
+import { ApiClient } from "./ApiClient.js";
 import { applyFieldChange } from "./applyFieldChange.js";
 import { Database } from "./Database.js";
 import { Loan } from "./Loan.js";
@@ -6,7 +6,7 @@ import { getLoan } from "./LoanQuery.js";
 import { DataEvent } from "./SubscriptionEventsBatch.js";
 
 export interface LoanChangeContext {
-  apiClient: GraphQLClient;
+  apiClient: ApiClient;
   loanDatabase: Database<Loan>;
   loanQuery: string;
 }

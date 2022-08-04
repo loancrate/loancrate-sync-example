@@ -1,4 +1,5 @@
-import { gql, GraphQLClient } from "graphql-request";
+import { gql } from "graphql-request";
+import { ApiClient } from "./ApiClient.js";
 import { FeedInput, FilterOperator } from "./Feed.js";
 
 export interface WebhooksFeedInput extends FeedInput {
@@ -74,14 +75,17 @@ const WebhooksFeedQuery = gql`
 `;
 
 export async function getWebhooksFeed(
-  client: GraphQLClient,
+  client: ApiClient,
   input?: WebhooksFeedInput
 ): Promise<WebhooksFeedOutput> {
-  return await client.request<WebhooksFeedOutput>(WebhooksFeedQuery, input);
+  return await client.request<WebhooksFeedOutput, WebhooksFeedInput>(
+    WebhooksFeedQuery,
+    input
+  );
 }
 
 export async function getWebhookIdFromUrl(
-  client: GraphQLClient,
+  client: ApiClient,
   url: string,
   operator: FilterOperator = "equals"
 ): Promise<WebhooksFeedWebhook | undefined> {

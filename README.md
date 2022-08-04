@@ -11,7 +11,7 @@ Subsequent loan creations, deletions, and updates occur based on received webhoo
 
 ### Configuration
 
-Copy `.env-sample` to `.env` and set `LOANCRATE_API_BEARER_TOKEN` to your LoanCrate Bearer token.
+Copy `.env-sample` to `.env` and set `LOANCRATE_API_ACCESS_TOKEN` to your LoanCrate Bearer token.
 You can obtain a bearer token from the web client using a tool like the Chrome Inspector.
 On the Network tab, find a `graphql` POST request and copy the token from the `authorization` header.
 

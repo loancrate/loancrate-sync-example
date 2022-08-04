@@ -1,4 +1,5 @@
-import { gql, GraphQLClient } from "graphql-request";
+import { gql } from "graphql-request";
+import { ApiClient } from "./ApiClient";
 
 export interface CreateWebhookSubscriptionInput {
   webhookId: string;
@@ -26,7 +27,7 @@ const CreateWebhookSubscriptionQuery = gql`
 `;
 
 export async function createWebhookSubscription(
-  client: GraphQLClient,
+  client: ApiClient,
   input: CreateWebhookSubscriptionInput
 ): Promise<CreateWebhookSubscriptionOutput> {
   return await client.request<CreateWebhookSubscriptionOutput>(

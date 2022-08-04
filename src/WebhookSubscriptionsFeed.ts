@@ -1,4 +1,5 @@
-import { gql, GraphQLClient } from "graphql-request";
+import { gql } from "graphql-request";
+import { ApiClient } from "./ApiClient.js";
 import { FeedInput, FilterOperator } from "./Feed.js";
 
 export interface WebhookSubscriptionsFeedInput extends FeedInput {
@@ -52,11 +53,11 @@ const WebhookSubscriptionsFeedQuery = gql`
 `;
 
 export async function getWebhookSubscriptionsFeed(
-  client: GraphQLClient,
+  client: ApiClient,
   input?: WebhookSubscriptionsFeedInput
 ): Promise<WebhookSubscriptionsFeedOutput> {
-  return await client.request<WebhookSubscriptionsFeedOutput>(
-    WebhookSubscriptionsFeedQuery,
-    input
-  );
+  return await client.request<
+    WebhookSubscriptionsFeedOutput,
+    WebhookSubscriptionsFeedInput
+  >(WebhookSubscriptionsFeedQuery, input);
 }

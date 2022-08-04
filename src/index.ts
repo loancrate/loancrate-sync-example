@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import { isObjectType } from "graphql";
 import ngrok from "ngrok";
 import path from "path";
-import { getApiClient } from "./ApiClient.js";
+import { ApiClient } from "./ApiClient.js";
 import { applyLoanChange } from "./applyObjectChange.js";
 import { configuration } from "./Configuration.js";
 import { createWebhook } from "./CreateWebhook.js";
@@ -48,7 +48,11 @@ try {
     cacheOptions: { max: 1000 },
   });
 
-  const apiClient = getApiClient();
+  const apiClient = new ApiClient({
+    baseUrl: configuration.loancrateApiUrl,
+    accessToken: configuration.loancrateApiAccessToken,
+    refreshToken: configuration.loancrateApiRefreshToken,
+  });
   const introspection = await getIntrospection(apiClient);
   const schema = new IntrospectionSchema(introspection);
   const loanType = schema.getNamedType("Loan");
