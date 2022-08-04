@@ -23,8 +23,25 @@ export async function startServer(): Promise<{
 
   let protocol: string;
   let server: Server;
-  const { serverCertificatePath, serverKeyPath, useNgrok } = configuration;
+  const {
+    clientCaCertificatePath,
+    serverCertificatePath,
+    serverKeyPath,
+    useNgrok,
+  } = configuration;
   if (serverCertificatePath && serverKeyPath && !useNgrok) {
+    const ca =
+      clientCaCertificatePath && (await readFile(clientCaCertificatePath));
+    if (ca) {
+      const x509 = new X509Certificate(ca);
+      const { subject, validFrom, validTo, fingerprint256 } = x509;
+      const cn = subject.replace(/^.*\bCN=/s, "");
+      logger.info(
+        { subject, validFrom, validTo, fingerprint256 },
+        `Loaded client CA certificate for ${cn}`
+      );
+    }
+
     const cert = await readFile(serverCertificatePath);
     const key = await readFile(serverKeyPath);
 
@@ -32,13 +49,14 @@ export async function startServer(): Promise<{
     const { subject, subjectAltName, validFrom, validTo, fingerprint256 } =
       x509;
     logger.info(
-      { subjectAltName, validFrom, validTo, fingerprint256 },
+      { subject, subjectAltName, validFrom, validTo, fingerprint256 },
       `Loaded certificate and key for ${subjectAltName || subject}`
     );
 
     protocol = "https";
     server = createHttpsServer(
       {
+        ca,
         cert,
         key,
         requestCert: true,

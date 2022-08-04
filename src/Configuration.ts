@@ -1,6 +1,7 @@
 const {
   ALLOW_UNAUTHENTICATED_CLIENT = "true",
   CLIENT_ALLOWED_ALT_NAMES = "DNS:loancrate.dev",
+  CLIENT_CA_CERTIFICATE_PATH,
   DATA_DIRECTORY = "data",
   LOANCRATE_API_ACCESS_TOKEN,
   LOANCRATE_API_REFRESH_TOKEN,
@@ -19,6 +20,7 @@ const {
 export class Configuration {
   allowUnauthenticatedClient: boolean;
   clientAllowedAltNames: Set<string>;
+  clientCaCertificatePath: string | undefined;
   dataDirectory: string;
   loancrateApiUrl: string;
   loancrateApiAccessToken: string | undefined;
@@ -41,6 +43,7 @@ export class Configuration {
     this.clientAllowedAltNames = new Set(
       CLIENT_ALLOWED_ALT_NAMES.split(/,\s*/)
     );
+    this.clientCaCertificatePath = CLIENT_CA_CERTIFICATE_PATH;
     this.dataDirectory = DATA_DIRECTORY;
     this.loancrateApiUrl = required("LOANCRATE_API_URL");
     this.loancrateApiAccessToken = LOANCRATE_API_ACCESS_TOKEN;

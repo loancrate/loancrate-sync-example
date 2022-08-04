@@ -156,7 +156,7 @@ try {
             configuration.clientAllowedAltNames.has(name)
           )
         ) {
-          logger.debug({ altNames }, "Client authenticated");
+          logger.info({ altNames }, "Client authenticated");
         } else if (!configuration.allowUnauthenticatedClient) {
           res.sendStatus(403);
           return;
@@ -167,6 +167,7 @@ try {
           );
         }
       } else if (!configuration.allowUnauthenticatedClient) {
+        logger.info("Rejecting unauthenticated client");
         res.sendStatus(401);
         return;
       } else {
