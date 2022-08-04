@@ -33,6 +33,7 @@ import { makeLoanQuery } from "./LoanQuery.js";
 import { logger } from "./logger.js";
 import { selectAllFields, selectSubfields } from "./selectField.js";
 import { startServer } from "./server.js";
+import { DataEventWithId } from "./SubscriptionEventsBatch.js";
 import { updateWebhook } from "./UpdateWebhook.js";
 import { isSubscriptionEventsBatch } from "./util.js";
 import {
@@ -59,6 +60,12 @@ try {
   const loanDatabase = new JsonFileDatabase<Loan>({
     dataPath: path.join(configuration.dataDirectory, "loans"),
     cacheOptions: { max: 1000 },
+  });
+
+  // Write all data events to JSON files for diagnostic use
+  const eventsDatabase = new JsonFileDatabase<DataEventWithId>({
+    dataPath: path.join(configuration.dataDirectory, "events"),
+    cacheOptions: { max: 1 },
   });
 
   // Start the HTTP(S) server with no endpoints configured yet
@@ -185,6 +192,7 @@ try {
                 event.__typename !== "PingEvent" &&
                 event.objectType === "Loan"
               ) {
+                await eventsDatabase.write(event.eventId, event);
                 await applyLoanChange(
                   { apiClient, loanDatabase, loanQuery },
                   event
