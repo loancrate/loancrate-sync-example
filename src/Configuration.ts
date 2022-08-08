@@ -1,6 +1,6 @@
 const {
   ALLOW_UNAUTHENTICATED_CLIENT = "true",
-  CLIENT_ALLOWED_ALT_NAMES = "DNS:loancrate.dev",
+  CLIENT_ALLOWED_ALT_NAMES,
   CLIENT_CA_CERTIFICATE_PATH,
   DATA_DIRECTORY = "data",
   DELETE_WEBHOOK_ON_EXIT = "true",
@@ -44,7 +44,7 @@ export class Configuration {
       ALLOW_UNAUTHENTICATED_CLIENT
     );
     this.clientAllowedAltNames = new Set(
-      CLIENT_ALLOWED_ALT_NAMES.split(/,\s*/)
+      CLIENT_ALLOWED_ALT_NAMES ? CLIENT_ALLOWED_ALT_NAMES.split(/,\s*/) : []
     );
     this.clientCaCertificatePath = CLIENT_CA_CERTIFICATE_PATH;
     this.dataDirectory = DATA_DIRECTORY;
