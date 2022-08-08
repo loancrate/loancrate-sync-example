@@ -6,7 +6,6 @@ const {
   LOANCRATE_API_ACCESS_TOKEN,
   LOANCRATE_API_REFRESH_TOKEN,
   LOANCRATE_API_USER_EMAIL,
-  LOAN_IMPORT_LIMIT,
   LOG_LEVEL = "info",
   NGROK_AUTH_TOKEN,
   PUBLIC_HOST_NAME,
@@ -14,7 +13,6 @@ const {
   SERVER_CERTIFICATE_PATH,
   SERVER_KEY_PATH,
   USE_NGROK = "auto",
-  WEBHOOK_PORT = "8000",
 } = process.env;
 
 export class Configuration {
@@ -30,11 +28,12 @@ export class Configuration {
   logLevel: string;
   ngrokAuthToken: string | undefined;
   publicHostName: string | undefined;
+  publicPort: number | undefined;
   serverCaCertificatePath: string | undefined;
   serverCertificatePath: string | undefined;
   serverKeyPath: string | undefined;
   useNgrok: boolean;
-  webhookPort: number;
+  webhookPort: number | undefined;
 
   constructor() {
     this.allowUnauthenticatedClient = parseBoolean(
@@ -49,18 +48,17 @@ export class Configuration {
     this.loancrateApiAccessToken = LOANCRATE_API_ACCESS_TOKEN;
     this.loancrateApiRefreshToken = LOANCRATE_API_REFRESH_TOKEN;
     this.loancrateApiUserEmail = LOANCRATE_API_USER_EMAIL;
-    this.loanImportLimit = LOAN_IMPORT_LIMIT
-      ? parseInt(LOAN_IMPORT_LIMIT)
-      : undefined;
+    this.loanImportLimit = parseOptionalInt("LOAN_IMPORT_LIMIT");
     this.logLevel = LOG_LEVEL;
     this.ngrokAuthToken = NGROK_AUTH_TOKEN;
     this.publicHostName = PUBLIC_HOST_NAME;
+    this.publicPort = parseOptionalInt("PUBLIC_PORT");
     this.serverCaCertificatePath = SERVER_CA_CERTIFICATE_PATH;
     this.serverCertificatePath = SERVER_CERTIFICATE_PATH;
     this.serverKeyPath = SERVER_KEY_PATH;
     this.useNgrok =
       USE_NGROK === "auto" ? !PUBLIC_HOST_NAME : parseBoolean(USE_NGROK);
-    this.webhookPort = parseInt(WEBHOOK_PORT);
+    this.webhookPort = parseOptionalInt("WEBHOOK_PORT");
   }
 }
 
@@ -68,6 +66,19 @@ export const configuration = new Configuration();
 
 function parseBoolean(s: string | undefined): boolean {
   return s === "1" || s === "true";
+}
+
+function parseOptionalInt(name: string): number | undefined {
+  const value = process.env[name];
+  if (value) {
+    const i = parseInt(value);
+    if (Number.isNaN(i)) {
+      throw new Error(
+        `Integer value expected for environment variable ${name}`
+      );
+    }
+    return i;
+  }
 }
 
 function required(name: string): string {

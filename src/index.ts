@@ -16,12 +16,7 @@ import { configuration } from "./Configuration.js";
 import { createWebhook } from "./CreateWebhook.js";
 import { createWebhookCertificate } from "./CreateWebhookCertificate.js";
 import { createWebhookSubscription } from "./CreateWebhookSubscription.js";
-import {
-  FilterOperator,
-  getFeed,
-  getFeedTotalCount,
-  makeFeedQuery,
-} from "./Feed.js";
+import { getFeed, getFeedTotalCount, makeFeedQuery } from "./Feed.js";
 import { getIntrospection } from "./IntrospectionQuery.js";
 import { IntrospectionSchema } from "./IntrospectionSchema.js";
 import {
@@ -217,8 +212,7 @@ try {
   // based on the configured public host name or a dynamic ngrok tunnel
   let webhookUrl: string;
   let searchUrl: string;
-  let searchOperator: FilterOperator;
-  const { publicHostName = host, useNgrok } = configuration;
+  const { publicHostName = host, publicPort = port, useNgrok } = configuration;
   if (useNgrok) {
     const ngrokUrl = await ngrok.connect({
       addr: port,
@@ -226,20 +220,14 @@ try {
     });
     webhookUrl = `${ngrokUrl}/webhook`;
     searchUrl = "ngrok.io";
-    searchOperator = "contains";
   } else {
-    webhookUrl = `${protocol}://${publicHostName}:${port}/webhook`;
-    searchUrl = webhookUrl;
-    searchOperator = "equals";
+    webhookUrl = `${protocol}://${publicHostName}:${publicPort}/webhook`;
+    searchUrl = publicHostName;
   }
   logger.info(`Using webhook URL: ${webhookUrl}`);
 
   // Create/update the webhook in the LoanCrate API
-  const webhook = await getWebhookIdFromUrl(
-    apiClient,
-    searchUrl,
-    searchOperator
-  );
+  const webhook = await getWebhookIdFromUrl(apiClient, searchUrl, "contains");
   let webhookId: string;
   let certificates: WebhooksFeedWebhookCertificate[];
   let subscriptions: WebhooksFeedWebhookSubscription[];
