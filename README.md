@@ -16,6 +16,13 @@ The application requires Node.js 16 or later.
 The easiest way to ensure you have a compatible version installed is to use [Node Version Manager (nvm)](https://github.com/nvm-sh/nvm).
 Using nvm, you can install the version of Node listed in `.nvmrc` by running `nvm install`.
 
+### Install CMake (optional)
+
+If you want to use PCP, NAT-PMP, or UPnP port mapping to test HTTPS from an internal network,
+you'll need to [install CMake](https://cmake.org/install/) before installing dependencies.
+The easiest way is with a package manager, such as Homebrew on Mac (`brew install cmake`),
+Apt on Linux (`apt-get install cmake`), or Chocolatey on Windows (`choco install cmake`).
+
 ### Install Dependencies
 
 Install the Node.js libraries the application depends on by running `npm install`.

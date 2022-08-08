@@ -2,6 +2,8 @@ import asyncHandler from "express-async-handler";
 import { readFile } from "fs/promises";
 import { isObjectType } from "graphql";
 import ngrok from "ngrok";
+// @ts-ignore optional dependency
+import { Mapping } from "node-portmapping";
 import open from "open";
 import path from "path";
 import { TLSSocket } from "tls";
@@ -12,10 +14,12 @@ import {
   OAuthTokens,
 } from "./ApiClient.js";
 import { applyLoanChange } from "./applyObjectChange.js";
+import { addCleanupHandler } from "./cleanup.js";
 import { configuration } from "./Configuration.js";
 import { createWebhook } from "./CreateWebhook.js";
 import { createWebhookCertificate } from "./CreateWebhookCertificate.js";
 import { createWebhookSubscription } from "./CreateWebhookSubscription.js";
+import { deleteWebhook } from "./DeleteWebhook.js";
 import { getFeed, getFeedTotalCount, makeFeedQuery } from "./Feed.js";
 import { getIntrospection } from "./IntrospectionQuery.js";
 import { IntrospectionSchema } from "./IntrospectionSchema.js";
@@ -212,8 +216,29 @@ try {
   // based on the configured public host name or a dynamic ngrok tunnel
   let webhookUrl: string;
   let searchUrl: string;
-  const { publicHostName = host, publicPort = port, useNgrok } = configuration;
-  if (useNgrok) {
+  if (configuration.usePortMapping) {
+    logger.info(`Attempting to forward a port using PCP, NAT-PMP, or UPnP`);
+    // @ts-ignore optional dependency
+    const nodePortMapping = (await import("node-portmapping")).default;
+    nodePortMapping.init({ logLevel: "Info" });
+    const mapping = await new Promise<Mapping>((resolve) => {
+      const mapping = nodePortMapping.createMapping(
+        {
+          internalPort: port,
+          externalPort: configuration.publicPort,
+        },
+        () => {
+          resolve(mapping);
+          return {};
+        }
+      );
+    });
+    addCleanupHandler(() => mapping.destroy());
+    const info = mapping.getInfo();
+    webhookUrl = `${protocol}://${info.externalHost}:${info.externalPort}/webhook`;
+    searchUrl = info.externalHost;
+  } else if (configuration.useNgrok) {
+    logger.info(`Attempting to open an ngrok tunnel`);
     const ngrokUrl = await ngrok.connect({
       addr: port,
       authtoken: configuration.ngrokAuthToken,
@@ -221,6 +246,7 @@ try {
     webhookUrl = `${ngrokUrl}/webhook`;
     searchUrl = "ngrok.io";
   } else {
+    const { publicHostName = host, publicPort = port } = configuration;
     webhookUrl = `${protocol}://${publicHostName}:${publicPort}/webhook`;
     searchUrl = publicHostName;
   }
@@ -247,6 +273,14 @@ try {
       logger.info(`Updating webhook URL: ${webhook.url} -> ${webhookUrl}`);
       await updateWebhook(apiClient, { id: webhookId, url: webhookUrl });
     }
+  }
+
+  // For testing purposes only, delete webhook on exit
+  if (configuration.deleteWebhookOnExit) {
+    addCleanupHandler(async () => {
+      logger.info(`Deleting webhook ${webhookId}`);
+      await deleteWebhook(apiClient, { id: webhookId });
+    });
   }
 
   // Add the CA certificate to the webhook if using HTTPS with a self-signed certificate
@@ -347,4 +381,5 @@ try {
   await updateWebhook(apiClient, { id: webhookId, errorCount: 0 });
 } catch (err) {
   logger.error(err, "Unhandled exception");
+  process.exit(1);
 }
