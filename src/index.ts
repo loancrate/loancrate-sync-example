@@ -1,3 +1,4 @@
+import { addCleanupListener } from "async-cleanup";
 import asyncHandler from "express-async-handler";
 import { readFile } from "fs/promises";
 import { isObjectType } from "graphql";
@@ -14,7 +15,6 @@ import {
   OAuthTokens,
 } from "./ApiClient.js";
 import { applyLoanChange } from "./applyObjectChange.js";
-import { addCleanupHandler } from "./cleanup.js";
 import { configuration } from "./Configuration.js";
 import { createWebhook } from "./CreateWebhook.js";
 import { createWebhookCertificate } from "./CreateWebhookCertificate.js";
@@ -233,7 +233,7 @@ try {
         }
       );
     });
-    addCleanupHandler(() => mapping.destroy());
+    addCleanupListener(() => mapping.destroy());
     const info = mapping.getInfo();
     webhookUrl = `${protocol}://${info.externalHost}:${info.externalPort}/webhook`;
     searchUrl = info.externalHost;
@@ -277,7 +277,7 @@ try {
 
   // For testing purposes only, delete webhook on exit
   if (configuration.deleteWebhookOnExit) {
-    addCleanupHandler(async () => {
+    addCleanupListener(async () => {
       logger.info(`Deleting webhook ${webhookId}`);
       await deleteWebhook(apiClient, { id: webhookId });
     });
