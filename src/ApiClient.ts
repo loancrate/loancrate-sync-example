@@ -1,6 +1,6 @@
 import got from "got";
 import { ClientError, GraphQLClient, RequestDocument } from "graphql-request";
-import { isObject } from "./util.js";
+import { isObject, truncateError } from "./util.js";
 
 export interface OAuthTokens {
   accessToken: string;
@@ -43,13 +43,17 @@ export class ApiClient {
     variables?: V
   ): Promise<T> {
     try {
-      return await this.client.request(document, variables);
-    } catch (err) {
-      if (isAuthenticationError(err) && this.refreshToken != null) {
-        await this.refreshTokens();
+      try {
         return await this.client.request(document, variables);
+      } catch (err) {
+        if (isAuthenticationError(err) && this.refreshToken != null) {
+          await this.refreshTokens();
+          return await this.client.request(document, variables);
+        }
+        throw err;
       }
-      throw err;
+    } catch (err) {
+      throw truncateError(err);
     }
   }
 
