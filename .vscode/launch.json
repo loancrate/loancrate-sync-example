@@ -1,0 +1,25 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Program",
+      "type": "node",
+      "request": "launch",
+      // https://github.com/Microsoft/vscode/issues/11680#issuecomment-245719597
+      "runtimeExecutable": "${workspaceFolder}/debug.sh",
+      "runtimeArgs": ["-r", "dotenv/config"],
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/src/index.ts",
+      "preLaunchTask": "tsc: build - tsconfig.build.json",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "console": "internalConsole",
+      "internalConsoleOptions": "openOnSessionStart",
+      // https://github.com/pinojs/pino/issues/441
+      "outputCapture": "std",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}
