@@ -10,7 +10,7 @@ export function applyFieldChange(change: FieldChange, target: unknown): void {
   const accessor = accessWithJsonSelector(selector, target);
   if (!accessor.valid) {
     throw new Error(
-      `Invalid selector in ${change.__typename}: ${accessor.path}`
+      `Selector in ${change.__typename} not valid for target object: ${accessor.path}`
     );
   }
   switch (change.__typename) {
