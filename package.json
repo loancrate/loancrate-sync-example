@@ -17,7 +17,7 @@
     "watch": "nodemon"
   },
   "dependencies": {
-    "@loancrate/json-selector": "github:loancrate/json-selector",
+    "@loancrate/json-selector": "^2.1.0",
     "async-cleanup": "^1.0.0",
     "catch-unknown": "^1.0.0",
     "dotenv": "^16.0.1",
