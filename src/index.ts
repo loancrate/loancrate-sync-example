@@ -176,6 +176,7 @@ try {
       if (!acceptEvents) {
         logger.debug("Rejecting events during initial import");
         res.sendStatus(503);
+        return;
       }
 
       const body: unknown = req.body;
