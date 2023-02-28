@@ -183,16 +183,23 @@ try {
       if (isSubscriptionEventsBatch(body)) {
         try {
           for (const { subscriptionId, events } of body.subscriptionEvents) {
-            const count = events.length;
+            const changes = events.filter(
+              (event): event is DataEventWithId =>
+                event.__typename !== "PingEvent"
+            );
+
+            const count = changes.length;
+            if (!count) {
+              logger.info({ subscriptionId }, "Received ping event");
+              continue;
+            }
             logger.info(
               { count, subscriptionId },
               "Applying received data change events"
             );
-            for (const event of events) {
-              if (
-                event.__typename !== "PingEvent" &&
-                event.objectType === "Loan"
-              ) {
+
+            for (const event of changes) {
+              if (event.objectType === "Loan") {
                 await eventsDatabase.write(event.eventId, event);
                 await applyLoanChange(
                   { apiClient, loanDatabase, loanQuery },
