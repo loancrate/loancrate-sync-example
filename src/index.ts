@@ -20,26 +20,26 @@ import { createWebhook } from "./CreateWebhook.js";
 import { createWebhookCertificate } from "./CreateWebhookCertificate.js";
 import { createWebhookSubscription } from "./CreateWebhookSubscription.js";
 import { deleteWebhook } from "./DeleteWebhook.js";
-import { getFeed, getFeedTotalCount, makeFeedQuery } from "./Feed.js";
+import { getData, getTotalCount, makeQuery } from "./Query.js";
 import { getIntrospection } from "./IntrospectionQuery.js";
 import { IntrospectionSchema } from "./IntrospectionSchema.js";
 import {
   getJsonFileSingletonDatabase,
   JsonFileDatabase,
 } from "./JsonFileDatabase.js";
-import { Loan, LoansFeedOutput } from "./Loan.js";
+import { Loan, LoansOutput } from "./Loan.js";
 import { makeLoanQuery } from "./LoanQuery.js";
 import { logger } from "./logger.js";
-import { selectAllFields, selectSubfields } from "./selectField.js";
+import { selectAllFields } from "./selectField.js";
 import { startServer } from "./server.js";
 import { DataEventWithId } from "./SubscriptionEventsBatch.js";
 import { updateWebhook } from "./UpdateWebhook.js";
 import { isSubscriptionEventsBatch } from "./util.js";
 import {
   getWebhookIdFromUrl,
-  WebhooksFeedWebhookCertificate,
-  WebhooksFeedWebhookSubscription,
-} from "./WebhooksFeed.js";
+  WebhooksQueryWebhookCertificate,
+  WebhooksQueryWebhookSubscription,
+} from "./WebhooksQuery.js";
 
 interface SyncStatus {
   synced: boolean;
@@ -263,8 +263,8 @@ try {
   // Create/update the webhook in the LoanCrate API
   const webhook = await getWebhookIdFromUrl(apiClient, searchUrl, "contains");
   let webhookId: string;
-  let certificates: WebhooksFeedWebhookCertificate[];
-  let subscriptions: WebhooksFeedWebhookSubscription[];
+  let certificates: WebhooksQueryWebhookCertificate[];
+  let subscriptions: WebhooksQueryWebhookSubscription[];
   if (!webhook) {
     const webhook = await createWebhook(apiClient, { url: webhookUrl });
     webhookId = webhook.createWebhook.webhook.id;
@@ -330,45 +330,46 @@ try {
   // fetch all existing loans (or up to the configured limit)
   if (!existingSubscription || !status.synced) {
     // The API can provide the total loan count, but is currently capped at 1000
-    const loanCount = await getFeedTotalCount(apiClient, "LoansFeed");
+    const loanCount = await getTotalCount(apiClient, "loans");
     const maxLoanCount = 1000;
-    const loanCountDisplay =
-      loanCount > maxLoanCount ? `>${maxLoanCount}` : String(loanCount);
 
-    const loansFeedQuery = makeFeedQuery(
-      "LoansFeed",
-      selectSubfields("loans", loanSelectionSet)
-    );
-    const limit = 10;
+    const loansQuery = makeQuery("loans", loanSelectionSet.join(" "));
+
+    const first = 10;
     const { loanImportLimit } = configuration;
     logger.info(
       `Performing initial import of ${loanImportLimit ?? "all"} loans`
     );
-    for (let offset = 0; ; offset += limit) {
-      const endIndex =
-        loanCount <= maxLoanCount
-          ? Math.min(offset + limit, loanCount)
-          : offset + limit;
-      logger.info(
-        `Fetching loans ${offset + 1}-${endIndex} of ${loanCountDisplay}`
+    let after: string | null = null;
+    let hasNextPage = true;
+    let importedLoansCount = 0;
+    while (hasNextPage) {
+      const data: LoansOutput = await getData<LoansOutput>(
+        apiClient,
+        loansQuery,
+        {
+          first,
+          after,
+          orderBy: [{ fieldKey: "createdAt", sortOrder: "asc" }],
+        }
       );
-      const output = await getFeed<LoansFeedOutput>(apiClient, loansFeedQuery, {
-        limit,
-        offset,
-        orderBy: [{ fieldKey: "createdAt", sortOrder: "asc" }],
-      });
-      const { loans } = output.LoansFeed;
+      const {
+        loans: { edges, pageInfo },
+      } = data;
+      const loans = edges.map(({ node }) => node);
+      after = pageInfo.endCursor;
+      hasNextPage = pageInfo.hasNextPage;
       for (const loan of loans) {
         await loanDatabase.write(loan.id, loan);
       }
-      const imported = offset + loans.length;
+      importedLoansCount = importedLoansCount + loans.length;
       if (
-        loans.length < limit ||
-        (loanCount <= maxLoanCount && imported >= loanCount)
+        !hasNextPage ||
+        (loanCount <= maxLoanCount && importedLoansCount >= loanCount)
       ) {
         break;
       }
-      if (loanImportLimit != null && imported >= loanImportLimit) {
+      if (loanImportLimit != null && importedLoansCount >= loanImportLimit) {
         logger.info(`Reached import limit of ${loanImportLimit} loans`);
         break;
       }
