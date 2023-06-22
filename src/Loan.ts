@@ -13,8 +13,8 @@ interface LoanEdge {
 export interface PageInfo {
   hasPreviousPage: boolean;
   hasNextPage: boolean;
-  startCursor: string;
-  endCursor: string;
+  startCursor: string | null;
+  endCursor: string | null;
 }
 
 export interface LoansOutput {
