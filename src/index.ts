@@ -340,11 +340,11 @@ try {
     logger.info(
       `Performing initial import of ${loanImportLimit ?? "all"} loans`
     );
-    let after: string | null = null;
+    let after: string | undefined;
     let hasNextPage = true;
     let importedLoansCount = 0;
     while (hasNextPage) {
-      const data: LoansOutput = await getData<LoansOutput>(
+      const data = await getData<LoansOutput>(
         apiClient,
         loansQuery,
         {
@@ -362,7 +362,7 @@ try {
       for (const loan of loans) {
         await loanDatabase.write(loan.id, loan);
       }
-      importedLoansCount = importedLoansCount + loans.length;
+      importedLoansCount += loans.length;
       if (
         !hasNextPage ||
         (loanCount <= maxLoanCount && importedLoansCount >= loanCount)
