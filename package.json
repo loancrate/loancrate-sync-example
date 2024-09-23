@@ -24,7 +24,7 @@
     "express": "^4.21.0",
     "express-async-handler": "^1.2.0",
     "got": "^11.8.5",
-    "graphql": "^16.5.0",
+    "graphql": "^16.9.0",
     "graphql-request": "^4.3.0",
     "lru-cache": "^7.13.1",
     "ngrok": "^4.3.1",
