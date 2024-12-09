@@ -21,7 +21,7 @@
     "async-cleanup": "^1.0.0",
     "catch-unknown": "^1.0.0",
     "dotenv": "^16.0.1",
-    "express": "^4.21.1",
+    "express": "^4.21.2",
     "express-async-handler": "^1.2.0",
     "got": "^11.8.5",
     "graphql": "^16.9.0",
